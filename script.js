@@ -26,13 +26,54 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").match
   sync();
 })();
 
-// ── hero scene: keep the sun on screen on narrow viewports ──
+// ── hero scene: fit the sun into the free space beside the text ──
 (function heroScene() {
   const scene = document.querySelector(".hero-scene");
-  const phone = window.matchMedia("(max-width: 640px)");
-  const apply = () => scene.setAttribute("preserveAspectRatio", phone.matches ? "xMaxYMax slice" : "xMidYMax slice");
-  phone.addEventListener("change", apply);
-  apply();
+  const sunPos = scene.querySelector(".sun-pos");
+  const copy = document.querySelector(".hero-copy");
+  const name = copy.querySelector(".name");
+  const SUN = { x: 880, y: 250, r: 128 }; // sun geometry in SVG units
+  const GAP = 24, EDGE = 16;
+
+  // right edge of the rendered text (not the block box)
+  const textRight = (els) => Math.max(...els.map((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return range.getBoundingClientRect().right;
+  }));
+
+  function place() {
+    const vw = document.documentElement.clientWidth;
+    scene.setAttribute("preserveAspectRatio", vw > 1200 ? "xMidYMax slice" : "xMaxYMax slice");
+    if (vw > 1200) { sunPos.removeAttribute("transform"); return; }
+
+    let cx, cy, r;
+    if (vw <= 640) {
+      // phones: a small sun next to the name
+      const box = name.getBoundingClientRect();
+      const left = textRight([name]) + GAP;
+      r = Math.max(32, Math.min(64, (vw - EDGE - left) / 2));
+      cx = vw - EDGE - r;
+      cy = box.top + box.height / 2;
+    } else {
+      // tablets / small windows: centred in the space right of the copy
+      const box = copy.getBoundingClientRect();
+      const left = textRight([...copy.children]) + GAP;
+      r = Math.max(48, Math.min(150, (vw - EDGE - left) / 2));
+      cx = (left + vw - EDGE) / 2;
+      cy = box.top + box.height / 2;
+    }
+
+    const ctm = scene.getScreenCTM();
+    if (!ctm) return;
+    const pt = new DOMPoint(cx, cy).matrixTransform(ctm.inverse());
+    const k = r / ctm.a / SUN.r;
+    sunPos.setAttribute("transform", `translate(${pt.x - SUN.x * k} ${pt.y - SUN.y * k}) scale(${k})`);
+  }
+
+  window.addEventListener("resize", place);
+  document.fonts?.ready.then(place);
+  place();
 })();
 
 // ── typing effect ──

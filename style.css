@@ -326,8 +326,6 @@ main { position: relative; z-index: 2; }
   .nav-links { gap: var(--s4); }
   .nav-links a { font-size: 14px; }
   .hero { min-height: auto; padding-top: var(--s8); padding-bottom: 192px; align-items: flex-start; }
-  /* the scene is right-aligned on phones (see script.js); park a small sun beside the name */
-  .sun-pos { transform: translate(260px, -147px) scale(.34); transform-origin: 880px 250px; }
   .sec-title { font-size: 26px; }
   .section { padding-top: var(--s8); }
 }
